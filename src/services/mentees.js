@@ -859,6 +859,7 @@ module.exports = class MenteesHelper {
 				tokenInformation.id,
 				tokenInformation.organization_id
 			)
+
 			if (organizations.success && organizations.result.length > 0) {
 				organization_ids = [...organizations.result]
 
@@ -1072,6 +1073,7 @@ module.exports = class MenteesHelper {
 				additionalProjectionString,
 				true
 			)
+
 			let mentorExtensionDetails = await mentorQueries.getMentorsByUserIdsFromView(
 				[],
 				null,
@@ -1095,14 +1097,13 @@ module.exports = class MenteesHelper {
 					},
 				})
 			}
-			const menteeIds = extensionDetails.data.map((item) => item.user_id)
 
+			const menteeIds = extensionDetails.data.map((item) => item.user_id)
 			if (menteeIds) {
 				userServiceQueries['user_ids'] = menteeIds
 			}
 
 			const userDetails = await userRequests.search(userType, pageNo, pageSize, searchText, userServiceQueries)
-
 			if (userDetails.data.result.count == 0) {
 				return responses.successResponse({
 					statusCode: httpStatusCode.ok,
@@ -1124,6 +1125,7 @@ module.exports = class MenteesHelper {
 				additionalProjectionString,
 				false
 			)
+
 			mentorExtensionDetails = await mentorQueries.getMentorsByUserIdsFromView(
 				userIds,
 				null,
@@ -1131,15 +1133,18 @@ module.exports = class MenteesHelper {
 				filteredQuery,
 				saasFilter,
 				additionalProjectionString,
-				true
+				false
 			)
+
 			extensionDetails.data = [...extensionDetails.data, ...mentorExtensionDetails.data]
 			extensionDetails.count += mentorExtensionDetails.count
 
 			if (organization_ids.length > 0) {
-				extensionDetails.data = extensionDetails.data.filter((mentee) =>
-					organization_ids.includes(String(mentee.organization_id))
-				)
+				extensionDetails.data = extensionDetails.data.filter((mentee) => {
+					if (organization_ids.includes(String(mentee.organization_id))) {
+						return mentee
+					}
+				})
 			}
 
 			if (extensionDetails.data.length > 0) {
@@ -1152,7 +1157,6 @@ module.exports = class MenteesHelper {
 				)
 			}
 			const extensionDataMap = new Map(extensionDetails.data.map((newItem) => [newItem.user_id, newItem]))
-
 			userDetails.data.result.data = userDetails.data.result.data
 				.map((value) => {
 					// Map over each value in the values array of the current group

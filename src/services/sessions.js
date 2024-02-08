@@ -1778,7 +1778,7 @@ module.exports = class SessionsHelper {
 			//Return an empty CSV if sessions list is empty
 			if (sessions.length == 0) {
 				const parser = new Parser({
-					fields: CSVFields,
+					fields: ['No Data Found'],
 					header: true,
 					includeEmptyRows: true,
 					defaultValue: null,

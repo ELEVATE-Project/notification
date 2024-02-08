@@ -844,10 +844,12 @@ module.exports = class MentorsHelper {
 				.filter((value) => value !== null)
 
 			// add index number to the response
-			userDetails.data.result.data = userDetails.data.result.data.map((data, index) => ({
-				...data,
-				index_number: index + 1 + pageSize * (pageNo - 1), //To keep consistency with pagination
-			}))
+			userDetails.data.result.data = userDetails.data.result.data
+				.sort((a, b) => a.name.localeCompare(b.name)) //sort final result based on name
+				.map((data, index) => ({
+					...data,
+					index_number: index + 1 + pageSize * (pageNo - 1), //To keep consistency with pagination
+				}))
 
 			if (directory) {
 				let foundKeys = {}

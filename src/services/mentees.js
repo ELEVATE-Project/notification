@@ -1030,6 +1030,11 @@ module.exports = class MenteesHelper {
 			let organization_ids = []
 			let designation = []
 			let searchQuery = ''
+
+			const [sortBy, order] = ['name'].includes(queryParams.sort_by)
+				? [queryParams.sort_by, queryParams.order || 'ASC']
+				: [false, 'ASC']
+
 			for (let key in queryParams) {
 				if (queryParams.hasOwnProperty(key) & (key === 'search')) {
 					searchQuery = queryParams[key]
@@ -1184,6 +1189,17 @@ module.exports = class MenteesHelper {
 						user.is_enrolled = true
 						user.enrolled_type = enrolledUser.type
 					}
+				})
+			}
+
+			// Check if sortBy have values before applying sorting
+			if (sortBy) {
+				userDetails.data.result.data = userDetails.data.result.data.sort((a, b) => {
+					// Determine the sorting order based on the 'order' value
+					const sortOrder = order.toLowerCase() === 'asc' ? 1 : order.toLowerCase() === 'desc' ? -1 : 1
+
+					// Customize the sorting based on the provided sortBy field
+					return sortOrder * a[sortBy].localeCompare(b[sortBy])
 				})
 			}
 

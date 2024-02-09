@@ -722,8 +722,10 @@ module.exports = class MentorsHelper {
 			let organization_ids = []
 			let designation = []
 			let directory = false
-			const sortBy = ['name'].includes(queryParams.sort_by) ? queryParams.sort_by : false || false
-			const order = queryParams.order || 'DESC'
+
+			const [sortBy, order] = ['name'].includes(queryParams.sort_by)
+				? [queryParams.sort_by, queryParams.order || 'ASC']
+				: [false, 'ASC']
 
 			for (let key in queryParams) {
 				if (queryParams.hasOwnProperty(key) & ((key === 'email') | (key === 'name'))) {
@@ -845,14 +847,6 @@ module.exports = class MentorsHelper {
 				})
 				.filter((value) => value !== null)
 
-			// add index number to the response
-			userDetails.data.result.data = userDetails.data.result.data
-				.sort((a, b) => a.name.localeCompare(b.name)) //sort final result based on name
-				.map((data, index) => ({
-					...data,
-					index_number: index + 1 + pageSize * (pageNo - 1), //To keep consistency with pagination
-				}))
-
 			if (directory) {
 				let foundKeys = {}
 				let result = []
@@ -877,14 +871,20 @@ module.exports = class MentorsHelper {
 				userDetails.data.result.data = sortedData
 			} else {
 				// Check if sortBy and order have values before applying sorting
-				if (sortBy && order) {
+				if (sortBy) {
 					userDetails.data.result.data = userDetails.data.result.data.sort((a, b) => {
 						// Determine the sorting order based on the 'order' value
-						const sortOrder = order.toLowerCase() === 'asc' ? 1 : -1
+						const sortOrder = order.toLowerCase() === 'asc' ? 1 : order.toLowerCase() === 'desc' ? -1 : 1
 
 						// Customize the sorting based on the provided sortBy field
 						return sortOrder * a[sortBy].localeCompare(b[sortBy])
 					})
+
+					// add index number to the response
+					userDetails.data.result.data = userDetails.data.result.data.map((data, index) => ({
+						...data,
+						index_number: index + 1 + pageSize * (pageNo - 1), //To keep consistency with pagination
+					}))
 				}
 			}
 

@@ -205,7 +205,6 @@ module.exports = class SessionsHelper {
 
 			// Create session
 			const data = await sessionQueries.create(bodyData)
-
 			// If menteeIds are provided in the req body enroll them
 			if (menteeIdsToEnroll.length > 0) {
 				await this.addMentees(data.id, menteeIdsToEnroll, bodyData.time_zone)
@@ -431,7 +430,6 @@ module.exports = class SessionsHelper {
 			let sessionModel = await sessionQueries.getColumns()
 			bodyData = utils.restructureBody(bodyData, validationData, sessionModel)
 			let isSessionDataChanged = false
-			let onlySessionTitleIsChanged = false
 			let updatedSessionData = {}
 
 			if (method != common.DELETE_METHOD && (bodyData.end_date || bodyData.start_date)) {
@@ -511,6 +509,7 @@ module.exports = class SessionsHelper {
 				const { rowsAffected, updatedRows } = await sessionQueries.updateOne({ id: sessionId }, bodyData, {
 					returning: true,
 				})
+
 				if (rowsAffected == 0) {
 					return responses.failureResponse({
 						message: 'SESSION_ALREADY_UPDATED',
@@ -520,20 +519,15 @@ module.exports = class SessionsHelper {
 				}
 				message = 'SESSION_UPDATED_SUCCESSFULLY'
 				updatedSessionData = updatedRows[0].dataValues
-
 				// check what are the values changed only if session is updated/deleted by manager
 				// This is to decide on which email to trigger
 				if (isSessionCreatedByManager) {
 					// Confirm if session is edited or not.
-					const updatedSessionDetails = updatedDiff(sessionDetail.dataValues, updatedSessionData)
+					const updatedSessionDetails = updatedDiff(sessionDetail, updatedSessionData)
 					delete updatedSessionDetails.updated_at
 					const keys = Object.keys(updatedSessionDetails)
-
 					if (keys.length > 0) {
 						isSessionDataChanged = true
-						if (keys.length === 1 && keys.includes('title')) {
-							onlySessionTitleIsChanged = true // Set flag true
-						}
 					}
 				}
 				// If new start date is passed update session notification jobs
@@ -575,6 +569,7 @@ module.exports = class SessionsHelper {
 					})
 				}
 			}
+
 			if (method == common.DELETE_METHOD || isSessionReschedule || isSessionDataChanged) {
 				const sessionAttendees = await sessionAttendeesQueries.findAll({
 					session_id: sessionId,
@@ -617,11 +612,10 @@ module.exports = class SessionsHelper {
 				} else if (isSessionDataChanged && notifyUser) {
 					// session is edited by the manager
 					// if only title is changed. then a different email has to send to mentor and mentees
-					let sessionUpdateByMangerTemplate
-					onlySessionTitleIsChanged
-						? (sessionUpdateByMangerTemplate = process.env.SESSION_TITLE_EDITED_BY_MANAGER_EMAIL_TEMPLATE)
-						: (sessionUpdateByMangerTemplate = process.env.MENTEE_SESSION_EDITED_BY_MANAGER_EMAIL_TEMPLATE)
+					let sessionUpdateByMangerTemplate = process.env.MENTEE_SESSION_EDITED_BY_MANAGER_EMAIL_TEMPLATE
+					// This is the template used to send email to session mentees when it is edited
 					templateData = await notificationQueries.findOneEmailTemplate(sessionUpdateByMangerTemplate, orgId)
+					// This is the email template code we have to use to send email to mentor of a session
 					mentorEmailTemplate = process.env.MENTOR_SESSION_EDITED_BY_MANAGER_EMAIL_TEMPLATE
 				}
 
@@ -658,7 +652,7 @@ module.exports = class SessionsHelper {
 
 						// send email only if notify user is true
 						if (notifyUser) await kafkaCommunication.pushEmailToKafka(payload)
-					} else if (isSessionReschedule || isSessionDataChanged) {
+					} else if (isSessionReschedule || (isSessionDataChanged && notifyUser)) {
 						// Find old duration of session
 						let oldDuration = moment.duration(
 							moment.unix(sessionDetail.end_date).diff(moment.unix(sessionDetail.start_date))
@@ -764,7 +758,9 @@ module.exports = class SessionsHelper {
 					}
 				})
 				// send mail to mentor if session is created and handled by a manager
-				if (isSessionCreatedByManager) {
+				// send notification only if front end request for user notification
+				// notifyUser ---> this key is added for above purpose
+				if (isSessionCreatedByManager && notifyUser) {
 					let response = await this.pushSessionRelatedMentorEmailToKafka(
 						mentorEmailTemplate,
 						orgId,
@@ -2242,7 +2238,6 @@ module.exports = class SessionsHelper {
 					}),
 				},
 			}
-
 			// Push to Kafka
 			const kafkaResponse = await kafkaCommunication.pushEmailToKafka(payload)
 			return kafkaResponse

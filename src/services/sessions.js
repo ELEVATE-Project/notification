@@ -875,8 +875,7 @@ module.exports = class SessionsHelper {
 			const mentorDetails = await userRequests.details('', sessionDetails.mentor_id)
 			sessionDetails.mentor_name = mentorDetails.data.result.name
 			sessionDetails.organization = mentorDetails.data.result.organization
-
-			const { getDefaultOrgId } = require('@helpers/getDefaultOrgId')
+			sessionDetails.mentor_designation = []
 
 			const defaultOrgId = await getDefaultOrgId()
 			if (!defaultOrgId)
@@ -885,6 +884,26 @@ module.exports = class SessionsHelper {
 					statusCode: httpStatusCode.bad_request,
 					responseCode: 'CLIENT_ERROR',
 				})
+
+			const mentorExtension = await mentorExtensionQueries.getMentorExtension(sessionDetails.mentor_id)
+			if (mentorExtension?.user_id) {
+				const mentorExtensionsModelName = await mentorExtensionQueries.getModelName()
+
+				let entity_types = await entityTypeQueries.findUserEntityTypesAndEntities({
+					status: 'ACTIVE',
+					organization_id: {
+						[Op.in]: [mentorExtension.organization_id, defaultOrgId],
+					},
+					model_names: { [Op.contains]: [mentorExtensionsModelName] },
+				})
+				const validation_data = removeDefaultOrgEntityTypes(entity_types, mentorExtension.organization_id)
+				const processedEntityType = utils.processDbResponse(
+					{ designation: mentorExtension.designation },
+					validation_data
+				)
+				sessionDetails.mentor_designation = processedEntityType.designation
+			}
+
 			const sessionModelName = await sessionQueries.getModelName()
 			let entityTypes = await entityTypeQueries.findUserEntityTypesAndEntities({
 				status: 'ACTIVE',
@@ -896,7 +915,6 @@ module.exports = class SessionsHelper {
 
 			//validationData = utils.removeParentEntityTypes(JSON.parse(JSON.stringify(validationData)))
 			const validationData = removeDefaultOrgEntityTypes(entityTypes, sessionDetails.mentor_organization_id)
-
 			const processDbResponse = utils.processDbResponse(sessionDetails, validationData)
 
 			return responses.successResponse({

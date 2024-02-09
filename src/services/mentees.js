@@ -1140,11 +1140,9 @@ module.exports = class MenteesHelper {
 			extensionDetails.count += mentorExtensionDetails.count
 
 			if (organization_ids.length > 0) {
-				extensionDetails.data = extensionDetails.data.filter((mentee) => {
-					if (organization_ids.includes(String(mentee.organization_id))) {
-						return mentee
-					}
-				})
+				extensionDetails.data = extensionDetails.data.filter((mentee) =>
+					organization_ids.includes(String(mentee.organization_id))
+				)
 			}
 
 			if (extensionDetails.data.length > 0) {

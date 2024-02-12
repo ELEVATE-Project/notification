@@ -53,7 +53,7 @@ module.exports = class SessionsHelper {
 	static async create(bodyData, loggedInUserId, orgId, isAMentor, notifyUser) {
 		try {
 			// check if session mentor is added in the mentee list
-			if (bodyData?.mentees?.includes?.(bodyData?.mentor_id)) {
+			if (bodyData?.mentees?.includes(bodyData?.mentor_id)) {
 				return responses.failureResponse({
 					message: 'SESSION_MENTOR_ADDED_TO_MENTEE_LIST',
 					statusCode: httpStatusCode.bad_request,
@@ -328,14 +328,6 @@ module.exports = class SessionsHelper {
 		let isSessionReschedule = false
 		let isSessionCreatedByManager = false
 		try {
-			// check if session mentor is added in the mentee list
-			if (bodyData?.mentees?.includes?.(bodyData?.mentor_id)) {
-				return responses.failureResponse({
-					message: 'SESSION_MENTOR_ADDED_TO_MENTEE_LIST',
-					statusCode: httpStatusCode.bad_request,
-					responseCode: 'CLIENT_ERROR',
-				})
-			}
 			// To determine the session is created by manager or mentor we need to fetch the session details first
 			// Then compare mentor_id and created_by information
 			// If manager is the session creator then no need to check Mentor extension data
@@ -343,6 +335,15 @@ module.exports = class SessionsHelper {
 			if (!sessionDetail) {
 				return responses.failureResponse({
 					message: 'SESSION_NOT_FOUND',
+					statusCode: httpStatusCode.bad_request,
+					responseCode: 'CLIENT_ERROR',
+				})
+			}
+
+			// check if session mentor is added in the mentee list
+			if (bodyData?.mentees?.includes(bodyData?.mentor_id)) {
+				return responses.failureResponse({
+					message: 'SESSION_MENTOR_ADDED_TO_MENTEE_LIST',
 					statusCode: httpStatusCode.bad_request,
 					responseCode: 'CLIENT_ERROR',
 				})

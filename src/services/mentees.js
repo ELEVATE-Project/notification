@@ -6,7 +6,7 @@ const feedbackHelper = require('./feedback')
 const utils = require('@generics/utils')
 
 const { successResponse } = require('@constants/common')
-const rolePermissionMappingQueries = require('@database/queries/rolePermissionMapping')
+const rolePermissionMappingQueries = require('@database/queries/role-permission-mapping')
 const { UniqueConstraintError } = require('sequelize')
 const menteeQueries = require('@database/queries/userExtension')
 const sessionAttendeesQueries = require('@database/queries/sessionAttendees')
@@ -62,8 +62,8 @@ module.exports = class MenteesHelper {
 
 		const totalSession = await sessionAttendeesQueries.countEnrolledSessions(id)
 
-		const fetchrole = menteeDetails.data.result.roles
-		const filter = { role_id: fetchrole }
+		const titles = menteeDetails.data.result.user_roles.map((role) => role.title)
+		const filter = { role_title: titles }
 		const permissionAndModules = await rolePermissionMappingQueries.findAll(filter)
 		const permissionsByModule = {}
 
@@ -859,6 +859,7 @@ module.exports = class MenteesHelper {
 				tokenInformation.id,
 				tokenInformation.organization_id
 			)
+
 			if (organizations.success && organizations.result.length > 0) {
 				organization_ids = [...organizations.result]
 
@@ -1077,6 +1078,7 @@ module.exports = class MenteesHelper {
 				additionalProjectionString,
 				true
 			)
+
 			let mentorExtensionDetails = await mentorQueries.getMentorsByUserIdsFromView(
 				[],
 				null,
@@ -1100,14 +1102,13 @@ module.exports = class MenteesHelper {
 					},
 				})
 			}
-			const menteeIds = extensionDetails.data.map((item) => item.user_id)
 
+			const menteeIds = extensionDetails.data.map((item) => item.user_id)
 			if (menteeIds) {
 				userServiceQueries['user_ids'] = menteeIds
 			}
 
 			const userDetails = await userRequests.search(userType, pageNo, pageSize, searchText, userServiceQueries)
-
 			if (userDetails.data.result.count == 0) {
 				return responses.successResponse({
 					statusCode: httpStatusCode.ok,
@@ -1129,6 +1130,7 @@ module.exports = class MenteesHelper {
 				additionalProjectionString,
 				false
 			)
+
 			mentorExtensionDetails = await mentorQueries.getMentorsByUserIdsFromView(
 				userIds,
 				null,
@@ -1136,8 +1138,9 @@ module.exports = class MenteesHelper {
 				filteredQuery,
 				saasFilter,
 				additionalProjectionString,
-				true
+				false
 			)
+
 			extensionDetails.data = [...extensionDetails.data, ...mentorExtensionDetails.data]
 			extensionDetails.count += mentorExtensionDetails.count
 
@@ -1157,7 +1160,6 @@ module.exports = class MenteesHelper {
 				)
 			}
 			const extensionDataMap = new Map(extensionDetails.data.map((newItem) => [newItem.user_id, newItem]))
-
 			userDetails.data.result.data = userDetails.data.result.data
 				.map((value) => {
 					// Map over each value in the values array of the current group

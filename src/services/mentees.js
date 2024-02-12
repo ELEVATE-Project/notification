@@ -859,6 +859,7 @@ module.exports = class MenteesHelper {
 				tokenInformation.id,
 				tokenInformation.organization_id
 			)
+
 			if (organizations.success && organizations.result.length > 0) {
 				organization_ids = [...organizations.result]
 
@@ -1029,6 +1030,11 @@ module.exports = class MenteesHelper {
 			let organization_ids = []
 			let designation = []
 			let searchQuery = ''
+
+			const [sortBy, order] = ['name'].includes(queryParams.sort_by)
+				? [queryParams.sort_by, queryParams.order || 'ASC']
+				: [false, 'ASC']
+
 			for (let key in queryParams) {
 				if (queryParams.hasOwnProperty(key) & (key === 'search')) {
 					searchQuery = queryParams[key]
@@ -1072,6 +1078,7 @@ module.exports = class MenteesHelper {
 				additionalProjectionString,
 				true
 			)
+
 			let mentorExtensionDetails = await mentorQueries.getMentorsByUserIdsFromView(
 				[],
 				null,
@@ -1095,14 +1102,13 @@ module.exports = class MenteesHelper {
 					},
 				})
 			}
-			const menteeIds = extensionDetails.data.map((item) => item.user_id)
 
+			const menteeIds = extensionDetails.data.map((item) => item.user_id)
 			if (menteeIds) {
 				userServiceQueries['user_ids'] = menteeIds
 			}
 
 			const userDetails = await userRequests.search(userType, pageNo, pageSize, searchText, userServiceQueries)
-
 			if (userDetails.data.result.count == 0) {
 				return responses.successResponse({
 					statusCode: httpStatusCode.ok,
@@ -1124,6 +1130,7 @@ module.exports = class MenteesHelper {
 				additionalProjectionString,
 				false
 			)
+
 			mentorExtensionDetails = await mentorQueries.getMentorsByUserIdsFromView(
 				userIds,
 				null,
@@ -1131,8 +1138,9 @@ module.exports = class MenteesHelper {
 				filteredQuery,
 				saasFilter,
 				additionalProjectionString,
-				true
+				false
 			)
+
 			extensionDetails.data = [...extensionDetails.data, ...mentorExtensionDetails.data]
 			extensionDetails.count += mentorExtensionDetails.count
 
@@ -1152,7 +1160,6 @@ module.exports = class MenteesHelper {
 				)
 			}
 			const extensionDataMap = new Map(extensionDetails.data.map((newItem) => [newItem.user_id, newItem]))
-
 			userDetails.data.result.data = userDetails.data.result.data
 				.map((value) => {
 					// Map over each value in the values array of the current group
@@ -1182,6 +1189,17 @@ module.exports = class MenteesHelper {
 						user.is_enrolled = true
 						user.enrolled_type = enrolledUser.type
 					}
+				})
+			}
+
+			// Check if sortBy have values before applying sorting
+			if (sortBy) {
+				userDetails.data.result.data = userDetails.data.result.data.sort((a, b) => {
+					// Determine the sorting order based on the 'order' value
+					const sortOrder = order.toLowerCase() === 'asc' ? 1 : order.toLowerCase() === 'desc' ? -1 : 1
+
+					// Customize the sorting based on the provided sortBy field
+					return sortOrder * a[sortBy].localeCompare(b[sortBy])
 				})
 			}
 

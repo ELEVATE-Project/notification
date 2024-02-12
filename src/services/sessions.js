@@ -52,6 +52,14 @@ module.exports = class SessionsHelper {
 
 	static async create(bodyData, loggedInUserId, orgId, isAMentor, notifyUser) {
 		try {
+			// check if session mentor is added in the mentee list
+			if (bodyData?.mentees?.includes(bodyData?.mentor_id)) {
+				return responses.failureResponse({
+					message: 'SESSION_MENTOR_ADDED_TO_MENTEE_LIST',
+					statusCode: httpStatusCode.bad_request,
+					responseCode: 'CLIENT_ERROR',
+				})
+			}
 			// If type is passed store it in upper case
 			bodyData.type && (bodyData.type = bodyData.type.toUpperCase())
 			// If session type is private and mentorId is not passed in request body return an error
@@ -205,7 +213,6 @@ module.exports = class SessionsHelper {
 
 			// Create session
 			const data = await sessionQueries.create(bodyData)
-
 			// If menteeIds are provided in the req body enroll them
 			if (menteeIdsToEnroll.length > 0) {
 				await this.addMentees(data.id, menteeIdsToEnroll, bodyData.time_zone)
@@ -332,6 +339,15 @@ module.exports = class SessionsHelper {
 					responseCode: 'CLIENT_ERROR',
 				})
 			}
+
+			// check if session mentor is added in the mentee list
+			if (bodyData?.mentees?.includes(bodyData?.mentor_id)) {
+				return responses.failureResponse({
+					message: 'SESSION_MENTOR_ADDED_TO_MENTEE_LIST',
+					statusCode: httpStatusCode.bad_request,
+					responseCode: 'CLIENT_ERROR',
+				})
+			}
 			sessionDetail = sessionDetail.dataValues
 			if (sessionDetail.created_by !== userId) {
 				return responses.failureResponse({
@@ -431,7 +447,6 @@ module.exports = class SessionsHelper {
 			let sessionModel = await sessionQueries.getColumns()
 			bodyData = utils.restructureBody(bodyData, validationData, sessionModel)
 			let isSessionDataChanged = false
-			let onlySessionTitleIsChanged = false
 			let updatedSessionData = {}
 
 			if (method != common.DELETE_METHOD && (bodyData.end_date || bodyData.start_date)) {
@@ -511,6 +526,7 @@ module.exports = class SessionsHelper {
 				const { rowsAffected, updatedRows } = await sessionQueries.updateOne({ id: sessionId }, bodyData, {
 					returning: true,
 				})
+
 				if (rowsAffected == 0) {
 					return responses.failureResponse({
 						message: 'SESSION_ALREADY_UPDATED',
@@ -520,20 +536,15 @@ module.exports = class SessionsHelper {
 				}
 				message = 'SESSION_UPDATED_SUCCESSFULLY'
 				updatedSessionData = updatedRows[0].dataValues
-
 				// check what are the values changed only if session is updated/deleted by manager
 				// This is to decide on which email to trigger
 				if (isSessionCreatedByManager) {
 					// Confirm if session is edited or not.
-					const updatedSessionDetails = updatedDiff(sessionDetail.dataValues, updatedSessionData)
+					const updatedSessionDetails = updatedDiff(sessionDetail, updatedSessionData)
 					delete updatedSessionDetails.updated_at
 					const keys = Object.keys(updatedSessionDetails)
-
 					if (keys.length > 0) {
 						isSessionDataChanged = true
-						if (keys.length === 1 && keys.includes('title')) {
-							onlySessionTitleIsChanged = true // Set flag true
-						}
 					}
 				}
 				// If new start date is passed update session notification jobs
@@ -575,6 +586,7 @@ module.exports = class SessionsHelper {
 					})
 				}
 			}
+
 			if (method == common.DELETE_METHOD || isSessionReschedule || isSessionDataChanged) {
 				const sessionAttendees = await sessionAttendeesQueries.findAll({
 					session_id: sessionId,
@@ -617,11 +629,10 @@ module.exports = class SessionsHelper {
 				} else if (isSessionDataChanged && notifyUser) {
 					// session is edited by the manager
 					// if only title is changed. then a different email has to send to mentor and mentees
-					let sessionUpdateByMangerTemplate
-					onlySessionTitleIsChanged
-						? (sessionUpdateByMangerTemplate = process.env.SESSION_TITLE_EDITED_BY_MANAGER_EMAIL_TEMPLATE)
-						: (sessionUpdateByMangerTemplate = process.env.MENTEE_SESSION_EDITED_BY_MANAGER_EMAIL_TEMPLATE)
+					let sessionUpdateByMangerTemplate = process.env.MENTEE_SESSION_EDITED_BY_MANAGER_EMAIL_TEMPLATE
+					// This is the template used to send email to session mentees when it is edited
 					templateData = await notificationQueries.findOneEmailTemplate(sessionUpdateByMangerTemplate, orgId)
+					// This is the email template code we have to use to send email to mentor of a session
 					mentorEmailTemplate = process.env.MENTOR_SESSION_EDITED_BY_MANAGER_EMAIL_TEMPLATE
 				}
 
@@ -658,7 +669,7 @@ module.exports = class SessionsHelper {
 
 						// send email only if notify user is true
 						if (notifyUser) await kafkaCommunication.pushEmailToKafka(payload)
-					} else if (isSessionReschedule || isSessionDataChanged) {
+					} else if (isSessionReschedule || (isSessionDataChanged && notifyUser)) {
 						// Find old duration of session
 						let oldDuration = moment.duration(
 							moment.unix(sessionDetail.end_date).diff(moment.unix(sessionDetail.start_date))
@@ -764,7 +775,9 @@ module.exports = class SessionsHelper {
 					}
 				})
 				// send mail to mentor if session is created and handled by a manager
-				if (isSessionCreatedByManager) {
+				// send notification only if front end request for user notification
+				// notifyUser ---> this key is added for above purpose
+				if (isSessionCreatedByManager && notifyUser) {
 					let response = await this.pushSessionRelatedMentorEmailToKafka(
 						mentorEmailTemplate,
 						orgId,
@@ -875,8 +888,7 @@ module.exports = class SessionsHelper {
 			const mentorDetails = await userRequests.details('', sessionDetails.mentor_id)
 			sessionDetails.mentor_name = mentorDetails.data.result.name
 			sessionDetails.organization = mentorDetails.data.result.organization
-
-			const { getDefaultOrgId } = require('@helpers/getDefaultOrgId')
+			sessionDetails.mentor_designation = []
 
 			const defaultOrgId = await getDefaultOrgId()
 			if (!defaultOrgId)
@@ -885,6 +897,26 @@ module.exports = class SessionsHelper {
 					statusCode: httpStatusCode.bad_request,
 					responseCode: 'CLIENT_ERROR',
 				})
+
+			const mentorExtension = await mentorExtensionQueries.getMentorExtension(sessionDetails.mentor_id)
+			if (mentorExtension?.user_id) {
+				const mentorExtensionsModelName = await mentorExtensionQueries.getModelName()
+
+				let entity_types = await entityTypeQueries.findUserEntityTypesAndEntities({
+					status: 'ACTIVE',
+					organization_id: {
+						[Op.in]: [mentorExtension.organization_id, defaultOrgId],
+					},
+					model_names: { [Op.contains]: [mentorExtensionsModelName] },
+				})
+				const validation_data = removeDefaultOrgEntityTypes(entity_types, mentorExtension.organization_id)
+				const processedEntityType = utils.processDbResponse(
+					{ designation: mentorExtension.designation },
+					validation_data
+				)
+				sessionDetails.mentor_designation = processedEntityType.designation
+			}
+
 			const sessionModelName = await sessionQueries.getModelName()
 			let entityTypes = await entityTypeQueries.findUserEntityTypesAndEntities({
 				status: 'ACTIVE',
@@ -896,7 +928,6 @@ module.exports = class SessionsHelper {
 
 			//validationData = utils.removeParentEntityTypes(JSON.parse(JSON.stringify(validationData)))
 			const validationData = removeDefaultOrgEntityTypes(entityTypes, sessionDetails.mentor_organization_id)
-
 			const processDbResponse = utils.processDbResponse(sessionDetails, validationData)
 
 			return responses.successResponse({
@@ -1778,7 +1809,7 @@ module.exports = class SessionsHelper {
 			//Return an empty CSV if sessions list is empty
 			if (sessions.length == 0) {
 				const parser = new Parser({
-					fields: CSVFields,
+					fields: ['No Data Found'],
 					header: true,
 					includeEmptyRows: true,
 					defaultValue: null,
@@ -2224,7 +2255,6 @@ module.exports = class SessionsHelper {
 					}),
 				},
 			}
-
 			// Push to Kafka
 			const kafkaResponse = await kafkaCommunication.pushEmailToKafka(payload)
 			return kafkaResponse

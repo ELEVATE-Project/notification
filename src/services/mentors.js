@@ -847,17 +847,10 @@ module.exports = class MentorsHelper {
 				})
 				.filter((value) => value !== null)
 
-			function addIndexNumber(userDetails, pageNo, pageSize) {
-				return userDetails.data.result.data.map((data, index) => ({
-					...data,
-					index_number: index + 1 + pageSize * (pageNo - 1),
-				}))
-			}
-
 			if (directory) {
 				let foundKeys = {}
 				let result = []
-				userDetails.data.result.data = addIndexNumber(userDetails, pageNo, pageSize)
+				userDetails.data.result.data = await this.addIndexNumber(userDetails, pageNo, pageSize)
 
 				for (let user of userDetails.data.result.data) {
 					let firstChar = user.name.charAt(0)
@@ -887,10 +880,10 @@ module.exports = class MentorsHelper {
 						// Customize the sorting based on the provided sortBy field
 						return sortOrder * a[sortBy].localeCompare(b[sortBy])
 					})
-
-					// add index number to the response
-					userDetails.data.result.data = addIndexNumber(userDetails, pageNo, pageSize)
 				}
+
+				// add index number to the response
+				userDetails.data.result.data = await this.addIndexNumber(userDetails, pageNo, pageSize)
 			}
 
 			return responses.successResponse({
@@ -1059,5 +1052,12 @@ module.exports = class MentorsHelper {
 		} catch (error) {
 			throw error
 		}
+	}
+
+	static async addIndexNumber(userDetails, pageNo, pageSize) {
+		return userDetails.data.result.data.map((data, index) => ({
+			...data,
+			index_number: index + 1 + pageSize * (pageNo - 1),
+		}))
 	}
 }

@@ -847,9 +847,17 @@ module.exports = class MentorsHelper {
 				})
 				.filter((value) => value !== null)
 
+			function addIndexNumber(userDetails, pageNo, pageSize) {
+				return userDetails.data.result.data.map((data, index) => ({
+					...data,
+					index_number: index + 1 + pageSize * (pageNo - 1),
+				}))
+			}
+
 			if (directory) {
 				let foundKeys = {}
 				let result = []
+				userDetails.data.result.data = addIndexNumber(userDetails, pageNo, pageSize)
 
 				for (let user of userDetails.data.result.data) {
 					let firstChar = user.name.charAt(0)
@@ -881,10 +889,7 @@ module.exports = class MentorsHelper {
 					})
 
 					// add index number to the response
-					userDetails.data.result.data = userDetails.data.result.data.map((data, index) => ({
-						...data,
-						index_number: index + 1 + pageSize * (pageNo - 1), //To keep consistency with pagination
-					}))
+					userDetails.data.result.data = addIndexNumber(userDetails, pageNo, pageSize)
 				}
 			}
 

@@ -53,7 +53,7 @@ module.exports = class SessionsHelper {
 	static async create(bodyData, loggedInUserId, orgId, isAMentor, notifyUser) {
 		try {
 			// check if session mentor is added in the mentee list
-			if (bodyData.mentees.includes(bodyData.mentor_id)) {
+			if (bodyData?.mentees?.includes?.(bodyData?.mentor_id)) {
 				return responses.failureResponse({
 					message: 'SESSION_MENTOR_ADDED_TO_MENTEE_LIST',
 					statusCode: httpStatusCode.bad_request,
@@ -329,7 +329,7 @@ module.exports = class SessionsHelper {
 		let isSessionCreatedByManager = false
 		try {
 			// check if session mentor is added in the mentee list
-			if (bodyData.mentees.includes(bodyData.mentor_id)) {
+			if (bodyData?.mentees?.includes?.(bodyData?.mentor_id)) {
 				return responses.failureResponse({
 					message: 'SESSION_MENTOR_ADDED_TO_MENTEE_LIST',
 					statusCode: httpStatusCode.bad_request,

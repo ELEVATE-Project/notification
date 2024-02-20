@@ -107,14 +107,8 @@ module.exports = (app) => {
 				responseCode,
 				error: errorData,
 				meta: { correlation: correlationId.getId() },
+				message,
 			}
-
-			const interpolationOptions = {
-				...error?.interpolation,
-				interpolation: { escapeValue: false },
-			}
-
-			options.message = error.interpolation ? req.t(message, interpolationOptions) : req.t(message)
 
 			res.status(status).json(options)
 		} else {

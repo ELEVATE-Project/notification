@@ -1,6 +1,6 @@
 <div align="center">
 
-# Notifications Service
+# Notification Service
 
 <a href="https://shikshalokam.org/elevate/">
 <img
@@ -35,14 +35,14 @@
 </details> -->
 
 </br>
-The Mentoring building block enables effective mentoring interactions between mentors and mentees. The capability aims to create a transparent eco-system to learn, connect, solve, and share within communities.MentorED is an open source mentoring application that facilitates peer learning and professional development by creating a community of mentors and mentees.
+The Mentor building block enables effective mentoring interactions between mentors and mentees. The capability aims to create a transparent eco-system to learn, connect, solve, and share within communities. Mentor is an open-source mentoring application that facilitates peer learning and professional development by creating a community of mentors and mentees.
 </div>
 
 <br>
 
 # Setup Options
 
-Elevate notification services can be setup in local using two methods:
+Elevate notification services can be set in local using two methods:
 
 <details><summary>Dockerized service with local dependencies(Intermediate)</summary>
 
@@ -196,9 +196,9 @@ npm test
 
 # Used in
 
-This project was built to be used with [Mentoring Service](https://github.com/ELEVATE-Project/mentoring.git) and [User Service](https://github.com/ELEVATE-Project/user.git).
+This project was built to be used with [Mentor Service](https://github.com/ELEVATE-Project/mentoring.git) and [User Service](https://github.com/ELEVATE-Project/user.git).
 
-The frontend/mobile application [repo](https://github.com/ELEVATE-Project/mentoring-mobile-app).
+The PWA [repo](https://github.com/ELEVATE-Project/mentoring-mobile-app).
 
 You can learn more about the full implementation of MentorEd [here](https://elevate-docs.shikshalokam.org/.mentorEd/intro) .
 

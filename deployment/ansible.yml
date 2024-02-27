@@ -47,10 +47,6 @@
     - name: Move code from release  to service folder
       shell: mv "{{ release_path }}"/* {{ current_path }}/
     
-    - name: Delete old pm2 process
-      command: pm2 delete elevate-notification
-      ignore_errors: yes
-    
     - name: set permission
       shell: chmod 744 {{ current_path }}/src/scripts/json2env.sh  
       
@@ -58,6 +54,13 @@
       shell: cat {{ project_path }}/data2.json | {{ current_path }}/src/scripts/json2env.sh > {{ current_path }}/src/.env
       register: envConfig 
     - debug: msg=" cred {{ envConfig }} "
+
+    - name: Run Migrations
+      command: "chdir={{current_path}}/src npx sequelize-cli db:migrate"
+
+    - name: Delete old pm2 process
+      command: pm2 delete elevate-notification
+      ignore_errors: yes
 
     - name: Delete release folder
       shell: rm -rf  {{ release_path }}

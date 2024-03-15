@@ -145,7 +145,7 @@ notification/src$ npx sequelize-cli db:migrate
 
 **Now all the tables must be available in the Citus databases**
 
-## Start the Services
+## Start the Service
 
 Navigate to the src folder of notification service and run pm2 start command:
 

@@ -24,6 +24,118 @@ sudo apt-get install -y nodejs
 $ sudo apt-get install build-essential
 ```
 
+### Install Kafka
+
+Refer to [Kafka Ubuntu 22.04 setup guide](https://www.fosstechnix.com/install-apache-kafka-on-ubuntu-22-04-lts/)
+
+1. Install OpenJDK 11:
+
+    ```bash
+    $ sudo apt install openjdk-11-jdk
+    ```
+
+2. Download and extract Kafka:
+
+    ```bash
+    $ sudo wget https://downloads.apache.org/kafka/3.5.0/kafka_2.12-3.5.0.tgz
+    $ sudo tar xzf kafka_2.12-3.5.0.tgz
+    $ sudo mv kafka_2.12-3.5.0 /opt/kafka
+    ```
+
+3. Configure Zookeeper:
+
+    ```bash
+    $ sudo nano /etc/systemd/system/zookeeper.service
+    ```
+
+    Paste the following lines into the `zookeeper.service` file:
+
+    ```ini
+    /etc/systemd/system/zookeeper.service
+    [Unit]
+    Description=Apache Zookeeper service
+    Documentation=http://zookeeper.apache.org
+    Requires=network.target remote-fs.target
+    After=network.target remote-fs.target
+
+    [Service]
+    Type=simple
+    ExecStart=/opt/kafka/bin/zookeeper-server-start.sh /opt/kafka/config/zookeeper.properties
+    ExecStop=/opt/kafka/bin/zookeeper-server-stop.sh
+    Restart=on-abnormal
+
+    [Install]
+    WantedBy=multi-user.target
+    ```
+
+    Save and exit.
+
+4. Reload systemd:
+
+    ```bash
+    $ sudo systemctl daemon-reload
+    ```
+
+5. Configure Kafka:
+
+    ```bash
+    $ sudo nano /etc/systemd/system/kafka.service
+    ```
+
+    Paste the following lines into the `kafka.service` file:
+
+    ```ini
+    [Unit]
+    Description=Apache Kafka Service
+    Documentation=http://kafka.apache.org/documentation.html
+    Requires=zookeeper.service
+
+    [Service]
+    Type=simple
+    Environment="JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64"
+    ExecStart=/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/server.properties
+    ExecStop=/opt/kafka/bin/kafka-server-stop.sh
+
+    [Install]
+    WantedBy=multi-user.target
+    ```
+
+    Save and exit.
+
+6. Reload systemd:
+
+    ```bash
+    $ sudo systemctl daemon-reload
+    ```
+
+7. Start Zookeeper:
+
+    ```bash
+    $ sudo systemctl start zookeeper
+    ```
+
+    Check status:
+
+    ```bash
+    $ sudo systemctl status zookeeper
+    ```
+
+    Zookeeper service status should be shown as active (running).
+
+8. Start Kafka:
+
+    ```bash
+    $ sudo systemctl start kafka
+    ```
+
+    Check status:
+
+    ```bash
+    $ sudo systemctl status kafka
+    ```
+
+    Kafka status should be shown as active (running).
+
 ### Install PM2
 
 Refer to [How To Set Up a Node.js Application for Production on Ubuntu 22.04](https://www.digitalocean.com/community/tutorials/how-to-set-up-a-node-js-application-for-production-on-ubuntu-22-04).

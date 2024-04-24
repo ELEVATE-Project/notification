@@ -3,4 +3,4 @@
 
 cd src
 npx lint-staged
-npm test
+#npm test

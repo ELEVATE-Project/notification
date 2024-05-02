@@ -9,6 +9,7 @@
 const sgMail = require('@sendgrid/mail')
 sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 const logQueries = require('../../database/queries/log')
+const request = require('request')
 
 /**
  * Send Email
@@ -22,9 +23,46 @@ const logQueries = require('../../database/queries/log')
  * @param  {String} params.cc - contains the cc of the email
  * @returns {JSON} Returns response of the email sending information
  */
+
+async function fetchFileByUrl(fileUrl) {
+	try {
+		const response = await new Promise((resolve, reject) => {
+			request(fileUrl.url, { encoding: null }, (err, res, body) => {
+				if (err) {
+					reject(err)
+				} else {
+					resolve({ content: body, filename: fileUrl.filename })
+				}
+			})
+		})
+		return response
+	} catch (error) {
+		throw new Error('Error fetching file: ' + error.message)
+	}
+}
+
 async function sendEmail(params) {
 	try {
+		let attachments = []
+
+		if (params.attachments && params.attachments.length > 0) {
+			const processAttachment = async (attachment) => {
+				const attachmentContent = await fetchFileByUrl(attachment)
+				return {
+					content: Buffer.from(attachmentContent.content).toString('base64'),
+					filename: attachment.filename,
+					type: attachment.type,
+				}
+			}
+
+			if (params.attachments.length === 1) {
+				attachments.push(await processAttachment(params.attachments[0]))
+			} else {
+				attachments = await Promise.all(params.attachments.map(processAttachment))
+			}
+		}
 		let fromMail = process.env.SENDGRID_FROM_MAIL
+
 		if (params.from) {
 			fromMail = params.from
 		}
@@ -35,6 +73,7 @@ async function sendEmail(params) {
 			to: to, // list of receivers
 			subject: params.subject, // Subject line
 			html: params.body,
+			attachments: attachments,
 		}
 		if (params.cc) {
 			message['cc'] = params.cc.split(',')
@@ -66,6 +105,7 @@ async function sendEmail(params) {
 			message: 'successfully mail sent',
 		}
 	} catch (error) {
+		console.log(error)
 		return {
 			status: 'failed',
 			message: 'Mail server is down, please try after some time',

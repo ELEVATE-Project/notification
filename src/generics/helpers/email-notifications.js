@@ -12,25 +12,12 @@ const logQueries = require('../../database/queries/log')
 const request = require('request')
 
 /**
- * Send Email
- * @method
- * @name sendEmail
- * @param  {Object} params - contains email information for sending email
- * @param  {String} params.from - email id of the sender
- * @param  {String} params.to - email id of the receiver
- * @param  {String} params.subject - subject of the email
- * @param  {String} params.body - contains email content
- * @param  {String} params.cc - contains the cc of the email
- * @returns {JSON} Returns response of the email sending information
- */
-
-/**
  * Fetches a file from a given URL.
  * @param {Object} fileUrl - The URL object containing information about the file.
  * @param {string} fileUrl.url - The URL of the file to fetch.
  * @param {string} fileUrl.filename - The name of the file.
  * @returns {Promise<Object>} A promise that resolves with an object containing the file content and filename.
- * @throws {Error} If an error occurs during the file fetch operation.
+ * @throws {Error} If an error occurs during the file fetch operation, or if the response status code is 400 or greater than or equal to 500.
  */
 async function fetchFileByUrl(fileUrl) {
 	try {
@@ -52,6 +39,18 @@ async function fetchFileByUrl(fileUrl) {
 	}
 }
 
+/**
+ * Send Email
+ * @method
+ * @name sendEmail
+ * @param  {Object} params - contains email information for sending email
+ * @param  {String} params.from - email id of the sender
+ * @param  {String} params.to - email id of the receiver
+ * @param  {String} params.subject - subject of the email
+ * @param  {String} params.body - contains email content
+ * @param  {String} params.cc - contains the cc of the email
+ * @returns {JSON} Returns response of the email sending information
+ */
 async function sendEmail(params) {
 	try {
 		let attachments = []

@@ -24,12 +24,23 @@ const request = require('request')
  * @returns {JSON} Returns response of the email sending information
  */
 
+/**
+ * Fetches a file from a given URL.
+ * @param {Object} fileUrl - The URL object containing information about the file.
+ * @param {string} fileUrl.url - The URL of the file to fetch.
+ * @param {string} fileUrl.filename - The name of the file.
+ * @returns {Promise<Object>} A promise that resolves with an object containing the file content and filename.
+ * @throws {Error} If an error occurs during the file fetch operation.
+ */
 async function fetchFileByUrl(fileUrl) {
 	try {
 		const response = await new Promise((resolve, reject) => {
 			request(fileUrl.url, { encoding: null }, (err, res, body) => {
 				if (err) {
 					reject(err)
+				} else if (res.statusCode === 400 || res.statusCode >= 500) {
+					// Handle 400 Bad Request and server errors
+					reject(new Error(`Request failed with status code ${res.statusCode}`))
 				} else {
 					resolve({ content: body, filename: fileUrl.filename })
 				}
@@ -44,21 +55,27 @@ async function fetchFileByUrl(fileUrl) {
 async function sendEmail(params) {
 	try {
 		let attachments = []
+		let errorMeta = {}
+		try {
+			if (params.attachments && params.attachments.length > 0) {
+				const processAttachment = async (attachment) => {
+					const attachmentContent = await fetchFileByUrl(attachment)
+					return {
+						content: Buffer.from(attachmentContent.content).toString('base64'),
+						filename: attachment.filename,
+						type: attachment.type,
+					}
+				}
 
-		if (params.attachments && params.attachments.length > 0) {
-			const processAttachment = async (attachment) => {
-				const attachmentContent = await fetchFileByUrl(attachment)
-				return {
-					content: Buffer.from(attachmentContent.content).toString('base64'),
-					filename: attachment.filename,
-					type: attachment.type,
+				if (params.attachments.length === 1) {
+					attachments.push(await processAttachment(params.attachments[0]))
+				} else {
+					attachments = await Promise.all(params.attachments.map(processAttachment))
 				}
 			}
-
-			if (params.attachments.length === 1) {
-				attachments.push(await processAttachment(params.attachments[0]))
-			} else {
-				attachments = await Promise.all(params.attachments.map(processAttachment))
+		} catch (error) {
+			errorMeta = {
+				attachments: { message: error.message },
 			}
 		}
 		let fromMail = process.env.SENDGRID_FROM_MAIL
@@ -83,17 +100,19 @@ async function sendEmail(params) {
 		}
 		try {
 			const res = await sgMail.send(message)
-			const errorResponse = {
+			errorResponse = {
 				email: to,
 				response_code: Number(res[0].statusCode),
+				meta: errorMeta,
 			}
 			await logQueries.createLog(errorResponse)
 		} catch (error) {
-			const errorResponse = {
+			errorResponse = {
 				email: to,
 				response_code: Number(error?.code),
 				error: error?.response,
 				status: 'FAILED',
+				meta: errorMeta,
 			}
 			await logQueries.createLog(errorResponse)
 			if (error.response) {

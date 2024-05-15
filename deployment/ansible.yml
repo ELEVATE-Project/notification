@@ -43,6 +43,7 @@
     
     - name: Delete Old Folder & create folder
       shell: rm -rf {{ current_path }} &&  cd {{ project_path }} && mkdir notification
+      state: absent
 
     - name: Move code from release  to service folder
       shell: mv "{{ release_path }}"/* {{ current_path }}/
@@ -64,6 +65,7 @@
 
     - name: Delete release folder
       shell: rm -rf  {{ release_path }}
+      state: absent
 
     - name: Start pm2
       command: "chdir={{current_path}}/src pm2 start app.js -i 2 --name elevate-notification"

@@ -41,8 +41,13 @@
     - name: Update npm
       shell: cd {{release_path}}/src && npm i
     
-    - name: Delete Old Folder & create folder
-      shell: rm -rf {{ current_path }} &&  cd {{ project_path }} && mkdir notification
+    - name: Delete Old Folder 
+      file:
+        path: "{{ current_path }}"
+        state: absent
+
+    - name: create folder 
+      shell: cd {{ project_path }} && mkdir notification
 
     - name: Move code from release  to service folder
       shell: mv "{{ release_path }}"/* {{ current_path }}/

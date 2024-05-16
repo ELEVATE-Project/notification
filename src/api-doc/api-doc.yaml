@@ -1,14 +1,14 @@
----
 openapi: 3.0.0
 info:
   title: Elevate Notification
   version: 1.0.0
-  termsOfService: 'https://github.com/project-sunbird/sunbird-commons/blob/master/LICENSE'
+  termsOfService: https://github.com/project-sunbird/sunbird-commons/blob/master/LICENSE
   description: >-
-    - The Notification Service is a centralized Service to support other services. Apis perform operations related to sending email notification etc 
+    - The Notification Service is a centralized Service to support other
+    services. Apis perform operations related to sending email notification etc 
 
-    - The URL for Users API(s) is `{context}/notification/v1`
-    - <b>Note:</b> These resources can be used in other services
+    - The URL for Users API(s) is `{context}/notification/v1` - <b>Note:</b>
+    These resources can be used in other services
   contact:
     email: tech-infra@shikshalokam.org
 servers:
@@ -16,9 +16,8 @@ servers:
     description: local server url
   - url: https://dev.elevate-apis.shikshalokam.org
     description: dev server url
-
 paths:
-  '/notification/v1/email/send':
+  /notification/v1/email/send:
     post:
       summary: Send Email
       tags:
@@ -28,7 +27,6 @@ paths:
         - Endpoint for sending email `/notification/v1/email/send`
         - It is mandatory to provide values for parameters marked as `required`.
         - Mandatory parameters cannot be empty or null.
-
       parameters:
         - name: internal_access_token
           in: header
@@ -41,20 +39,39 @@ paths:
         content:
           application.json:
             schema:
-              '$ref': '#/components/schemas/email/emailSendRequest'
+              $ref: '#/components/schemas/email/emailSendRequest'
+            examples:
+              example1:
+                value:
+                  type: email
+                  email:
+                    to: example@mail.com
+                    cc: ccexample@mail.com
+                    subject: Subject of email
+                    body: |-
+                      Dear Jhon, 
+                       Welcome to Notification
+                    attachments:
+                      - url: https://www.clickdimensions.com/links/TestPDFfile.pdf
+                        filename: some-pdf.pdf
+                        type: application/pdf
+                      - url: >-
+                          https://sample-videos.com/csv/Sample-Spreadsheet-10-rows.csv
+                        filename: some-csv.csv
+                        type: application/csv
       responses:
         '200':
           description: OK. Email sent successfully.
           content:
             application.json:
               schema:
-                '$ref': '#/components/schemas/email/emailSendResponse200'
+                $ref: '#/components/schemas/email/emailSendResponse200'
         '400':
           description: Bad Request.
           content:
             application.json:
               schema:
-                '$ref': '#/components/schemas/email/emailSendResponse400'
+                $ref: '#/components/schemas/email/emailSendResponse400'
 components:
   schemas:
     email:
@@ -94,7 +111,9 @@ components:
               body:
                 type: string
                 description: Body of Email. It will accept Html too.
-                example: "Dear Jhon, \n Welcome to Notification"
+                example: |-
+                  Dear Jhon, 
+                   Welcome to Notification
                 required: true
       emailSendResponse200:
         description: Email Sent response

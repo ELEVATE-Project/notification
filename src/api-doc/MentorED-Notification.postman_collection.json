@@ -1,25 +1,25 @@
 {
 	"info": {
-		"_postman_id": "c208eafb-8d59-4414-8b02-41bde6580ca9",
+		"_postman_id": "fa88f778-f705-47c6-8d27-7b5f068ced12",
 		"name": "MentorED-Notification",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "7997930"
+		"_exporter_id": "21498549"
 	},
 	"item": [
 		{
-			"name": "Send Email",
+			"name": "SendEmail",
 			"request": {
 				"method": "POST",
 				"header": [
 					{
 						"key": "internal_access_token",
-						"value": "bsj82AHBxahusub12yexlashsbxAXADHBlaj",
+						"value": "{{internal_access_token}}",
 						"type": "text"
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"type\":\"email\",\n    \"email\":{\n        \"to\": \"ankitstar00786@gmail.com\",\n\t\t\"subject\": \"MentorED - Reset Otp\",\n\t    \"body\": \"<p>Dear Ankit,</p> Your OTP to reset your password is <strong>123456</strong>. Please enter the OTP to reset your password. For your security, please do not share this OTP with anyone.\"\n    }\n}",
+					"raw": "{\n    \"type\": \"email\",\n    \"email\": {\n        \"to\": \"nevil@tunerlabs.com\",\n        \"subject\": \"Testing email logs\",\n        \"body\": \"Sample Data\",\n        \"attachments\": [\n            {\n                \"url\": \"https://www.clickdimensions.com/links/TestPDFfile.pdf\",\n                \"filename\": \"some-pdf.pdf\",\n                \"type\": \"application/pdf\",\n                \"disposition\": \"attachment\",\n                \"content_id\": \"mytext\"\n            },\n            {\n                \"url\": \"https://sample-videos.com/csv/Sample-Spreadsheet-10-rows.csv\",\n                \"filename\": \"some-csv.csv\",\n                \"type\": \"application/csv\",\n                \"disposition\": \"attachment\",\n                \"content_id\": \"mytext\"\n            }\n        ]\n    }\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -28,8 +28,14 @@
 				},
 				"url": {
 					"raw": "{{notificationBaseUrl}}notification/v1/email/send",
-					"host": ["{{notificationBaseUrl}}notification"],
-					"path": ["v1", "email", "send"]
+					"host": [
+						"{{notificationBaseUrl}}notification"
+					],
+					"path": [
+						"v1",
+						"email",
+						"send"
+					]
 				}
 			},
 			"response": []

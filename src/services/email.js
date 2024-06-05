@@ -18,8 +18,11 @@ module.exports = class EmailHelper {
 	 */
 	static async send(bodyData) {
 		if (bodyData.type == 'email' && bodyData.email) {
+			const currentDate = new Date().toISOString().split('T')[0].replace(/-/g, '')
+			console.log('===========', currentDate)
 			let result = await emailNotifications.sendEmail(bodyData.email)
 			if (result && result.status == 'success') {
+				console.log('===========', currentDate)
 				return responses.successResponse({
 					statusCode: httpStatusCode.ok,
 					message: apiResponses.EMAIL_SENT_SUCCESSFULLY,

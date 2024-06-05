@@ -19,6 +19,8 @@ module.exports = class Email {
 	async send(req) {
 		const params = req.body
 		try {
+			const currentDate = new Date().toISOString().split('T')[0].replace(/-/g, '')
+			console.log('===========', currentDate)
 			const sendEmail = await emailService.send(params)
 			return sendEmail
 		} catch (error) {

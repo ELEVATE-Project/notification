@@ -9,6 +9,35 @@
 const sgMail = require('@sendgrid/mail')
 sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 const logQueries = require('../../database/queries/log')
+const request = require('request')
+
+/**
+ * Fetches a file from a given URL.
+ * @param {Object} fileUrl - The URL object containing information about the file.
+ * @param {string} fileUrl.url - The URL of the file to fetch.
+ * @param {string} fileUrl.filename - The name of the file.
+ * @returns {Promise<Object>} A promise that resolves with an object containing the file content and filename.
+ * @throws {Error} If an error occurs during the file fetch operation, or if the response status code is 400 or greater than or equal to 500.
+ */
+async function fetchFileByUrl(fileUrl) {
+	try {
+		const response = await new Promise((resolve, reject) => {
+			request(fileUrl.url, { encoding: null }, (err, res, body) => {
+				if (err) {
+					reject(err)
+				} else if (res.statusCode === 400 || res.statusCode >= 500) {
+					// Handle 400 Bad Request and server errors
+					reject(new Error(`Request failed with status code ${res.statusCode}`))
+				} else {
+					resolve({ content: body, filename: fileUrl.filename })
+				}
+			})
+		})
+		return response
+	} catch (error) {
+		throw new Error('Error fetching file: ' + error.message)
+	}
+}
 
 /**
  * Send Email
@@ -24,7 +53,32 @@ const logQueries = require('../../database/queries/log')
  */
 async function sendEmail(params) {
 	try {
+		let attachments = []
+		let errorMeta = {}
+		try {
+			if (params.attachments && params.attachments.length > 0) {
+				const processAttachment = async (attachment) => {
+					const attachmentContent = await fetchFileByUrl(attachment)
+					return {
+						content: Buffer.from(attachmentContent.content).toString('base64'),
+						filename: attachment.filename,
+						type: attachment.type,
+					}
+				}
+
+				if (params.attachments.length === 1) {
+					attachments.push(await processAttachment(params.attachments[0]))
+				} else {
+					attachments = await Promise.all(params.attachments.map(processAttachment))
+				}
+			}
+		} catch (error) {
+			errorMeta = {
+				attachments: { message: error.message },
+			}
+		}
 		let fromMail = process.env.SENDGRID_FROM_MAIL
+
 		if (params.from) {
 			fromMail = params.from
 		}
@@ -35,6 +89,7 @@ async function sendEmail(params) {
 			to: to, // list of receivers
 			subject: params.subject, // Subject line
 			html: params.body,
+			attachments: attachments,
 		}
 		if (params.cc) {
 			message['cc'] = params.cc.split(',')
@@ -44,17 +99,19 @@ async function sendEmail(params) {
 		}
 		try {
 			const res = await sgMail.send(message)
-			const errorResponse = {
+			errorResponse = {
 				email: to,
 				response_code: Number(res[0].statusCode),
+				meta: errorMeta,
 			}
 			await logQueries.createLog(errorResponse)
 		} catch (error) {
-			const errorResponse = {
+			errorResponse = {
 				email: to,
 				response_code: Number(error?.code),
 				error: error?.response,
 				status: 'FAILED',
+				meta: errorMeta,
 			}
 			await logQueries.createLog(errorResponse)
 			if (error.response) {
@@ -66,6 +123,7 @@ async function sendEmail(params) {
 			message: 'successfully mail sent',
 		}
 	} catch (error) {
+		console.log(error)
 		return {
 			status: 'failed',
 			message: 'Mail server is down, please try after some time',

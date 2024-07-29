@@ -9,9 +9,28 @@ module.exports = {
 
 		req.checkBody('email.to')
 			.notEmpty()
-			.withMessage('email field is empty')
+			.withMessage('email.to field is empty')
 			.custom((emailIds) => emailValidation(emailIds))
 			.withMessage('invalid email ids')
+		req.checkBody('email.attachments').optional().notEmpty().withMessage('email.attachments field is empty')
+		if (emailValidation.attachments) {
+			req.checkBody('email.attachments.*.url')
+				.notEmpty()
+				.withMessage('attachments.url field is empty')
+				.isURL()
+				.withMessage('attachments.url is invalid')
+
+			req.checkBody('email.attachments.*.filename')
+				.notEmpty()
+				.withMessage('attachments.filename field is empty')
+				.isAlphanumeric('en-US', { ignore: '-_' })
+				.withMessage('attachments.filename is invalid')
+			req.checkBody('email.attachments.*.filename')
+				.notEmpty()
+				.withMessage('attachments.type field is empty')
+				.isAlphanumeric('en-US', { ignore: '/' })
+				.withMessage('attachments.type is invalid')
+		}
 	},
 }
 

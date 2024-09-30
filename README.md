@@ -35,7 +35,7 @@
 </details> -->
 
 </br>
-The Mentoring building block enables effective mentoring interactions between mentors and mentees. The capability aims to create a transparent eco-system to learn, connect, solve, and share within communities.MentorED is an open source mentoring application that facilitates peer learning and professional development by creating a community of mentors and mentees.
+The Notification building block enables sending emails via SendGrid service. It can receive informations - To, From, Subject, and Body via API as well as Kafka topic and sends the email using Sendgrid service, the credentials of which can be configured in the .env file. This service also maintains a log of all the emails sent in the Postgres.
 </div>
 
 <br>

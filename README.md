@@ -417,9 +417,7 @@ npm test
 
 This project was built to be used with [Mentoring Service](https://github.com/ELEVATE-Project/mentoring.git) and [User Service](https://github.com/ELEVATE-Project/user.git).
 
-The frontend/mobile application [repo](https://github.com/ELEVATE-Project/mentoring-mobile-app).
-
-You can learn more about the full implementation of MentorEd [here](https://elevate-docs.shikshalokam.org/.mentorEd/intro) .
+You can learn more about the full implementation of various capabilities of ELEVATE [here](https://elevate-docs.shikshalokam.org) .
 
 # Team
 

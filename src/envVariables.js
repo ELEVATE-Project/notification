@@ -5,7 +5,8 @@ let tableData = new table()
 let enviromentVariables = {
 	APPLICATION_PORT: {
 		message: 'Required port no',
-		optional: false,
+		optional: true,
+		default: '3002',
 	},
 	APPLICATION_ENV: {
 		message: 'Required node environment',
@@ -13,7 +14,8 @@ let enviromentVariables = {
 	},
 	APPLICATION_BASE_URL: {
 		message: 'Required application base url',
-		optional: false,
+		optional: true,
+		default: '/notification/',
 	},
 	ENABLE_LOG: {
 		message: 'log enable or disable',
@@ -25,11 +27,13 @@ let enviromentVariables = {
 	},
 	KAFKA_TOPIC: {
 		message: 'Required kafka topic',
-		optional: false,
+		optional: true,
+		default: 'notificationlocal',
 	},
 	KAFKA_GROUP_ID: {
 		message: 'Required kafka consumer group id',
 		optional: true,
+		default: 'notificationgroup',
 	},
 	SENDGRID_API_KEY: {
 		message: 'Required sendgrid api key',
@@ -41,15 +45,18 @@ let enviromentVariables = {
 	},
 	API_DOC_URL: {
 		message: 'Required api doc url',
-		optional: false,
+		optional: true,
+		default: '/notification/api-doc',
 	},
 	ERROR_LOG_LEVEL: {
 		message: 'Required Error log level',
-		optional: false,
+		optional: true,
+		default: 'silly',
 	},
 	DISABLE_LOG: {
 		message: 'Required disable log level',
-		optional: false,
+		optional: true,
+		default: true,
 	},
 }
 

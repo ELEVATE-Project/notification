@@ -44,8 +44,8 @@ let enviromentVariables = {
 			value: 'sendgrid',
 		},
 	},
-	SENDGRID_OR_SMTP_FROM_MAIL: {
-		message: 'Required sendgrid sender email address',
+	FROM_EMAIL: {
+		message: 'Required sender email address',
 		optional: false,
 	},
 	API_DOC_URL: {

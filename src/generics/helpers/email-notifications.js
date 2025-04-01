@@ -61,10 +61,26 @@ async function sendEmail(params) {
 			if (params.attachments && params.attachments.length > 0) {
 				const processAttachment = async (attachment) => {
 					const attachmentContent = await fetchFileByUrl(attachment)
-					return {
-						content: Buffer.from(attachmentContent.content).toString('base64'),
+
+					// Common attachment properties
+					const baseAttachment = {
 						filename: attachment.filename,
-						type: attachment.type,
+						content: attachmentContent.content,
+					}
+
+					if (emailService === common.emailServiceSmtp) {
+						// For SMTP, just return the content as is with contentType
+						return {
+							...baseAttachment,
+							contentType: attachment.type, // Add content type for SMTP
+						}
+					}
+
+					// For SendGrid, encode the content in base64
+					return {
+						...baseAttachment,
+						content: Buffer.from(attachmentContent.content).toString('base64'),
+						type: attachment.type, // Required for SendGrid
 					}
 				}
 
@@ -80,7 +96,7 @@ async function sendEmail(params) {
 			}
 		}
 
-		let fromMail = process.env.SENDGRID_OR_SMTP_FROM_MAIL
+		let fromMail = process.env.FROM_EMAIL
 
 		if (params.from) {
 			fromMail = params.from

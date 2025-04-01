@@ -13,4 +13,6 @@ module.exports = {
 	accessTokenSecret: 'hsghasghjab1273JHajnbabsjdj1273981273jhajksdh8y3123yhjkah812398yhjqwe7617237yuhdhhdqwu271',
 	refreshTokenSecret: '371hkjkjady2y3ihdkajshdkiq23iuekw71yekhaskdvkvegavy23t78veqwexqvxveit6ttxyeeytt62tx236vv',
 	guestUrls: [],
+	emailServiceSmtp: 'smtp',
+	emailServiceSendgrid: 'sendgrid',
 }

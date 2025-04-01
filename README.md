@@ -302,7 +302,7 @@ KAFKA_GROUP_ID="elevate-notification"
 SENDGRID_API_KEY="SG.asd9f87a9s8d7f."
 
 # Sendgrid sender email address
-SENDGRID_FROM_MAIL="no-reply@some.org"
+SENDGRID_OR_SMTP_FROM_MAIL="no-reply@some.org"
 
 # Api doc URL
 API_DOC_URL= "/notification/api-doc"

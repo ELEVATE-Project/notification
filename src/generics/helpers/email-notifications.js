@@ -7,9 +7,11 @@
 
 //Dependencies
 const sgMail = require('@sendgrid/mail')
-sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 const logQueries = require('../../database/queries/log')
 const request = require('request')
+const nodemailer = require('nodemailer')
+const emailService = process.env.EMAIL_SERVICE || 'sendgrid'
+const common = require('../../constants/common')
 
 /**
  * Fetches a file from a given URL.
@@ -59,10 +61,26 @@ async function sendEmail(params) {
 			if (params.attachments && params.attachments.length > 0) {
 				const processAttachment = async (attachment) => {
 					const attachmentContent = await fetchFileByUrl(attachment)
-					return {
-						content: Buffer.from(attachmentContent.content).toString('base64'),
+
+					// Common attachment properties
+					const baseAttachment = {
 						filename: attachment.filename,
-						type: attachment.type,
+						content: attachmentContent.content,
+					}
+
+					if (emailService === common.emailServiceSmtp) {
+						// For SMTP, just return the content as is with contentType
+						return {
+							...baseAttachment,
+							contentType: attachment.type, // Add content type for SMTP
+						}
+					}
+
+					// For SendGrid, encode the content in base64
+					return {
+						...baseAttachment,
+						content: Buffer.from(attachmentContent.content).toString('base64'),
+						type: attachment.type, // Required for SendGrid
 					}
 				}
 
@@ -77,11 +95,13 @@ async function sendEmail(params) {
 				attachments: { message: error.message },
 			}
 		}
-		let fromMail = process.env.SENDGRID_FROM_MAIL
+
+		let fromMail = process.env.FROM_EMAIL
 
 		if (params.from) {
 			fromMail = params.from
 		}
+
 		const to = params.to.split(',')
 
 		let message = {
@@ -98,13 +118,34 @@ async function sendEmail(params) {
 			message['replyTo'] = params.replyTo
 		}
 		try {
-			const res = await sgMail.send(message)
-			errorResponse = {
-				email: to,
-				response_code: Number(res[0].statusCode),
-				meta: errorMeta,
+			if (emailService == common.emailServiceSmtp) {
+				// SMTP Configuration
+				const transporter = nodemailer.createTransport({
+					host: process.env.SMTP_HOST,
+					port: process.env.SMTP_PORT || 587,
+					secure: process.env.SMTP_SECURE || false,
+					auth: {
+						user: process.env.SMTP_USER,
+						pass: process.env.SMTP_PASS,
+					},
+				})
+
+				let response = await transporter.sendMail(message)
+				if (!response?.messageId) {
+					throw new Error('Failed to send message')
+				}
+			} else if (emailService == common.emailServiceSendgrid) {
+				sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+				const res = await sgMail.send(message)
+				errorResponse = {
+					email: to,
+					response_code: Number(res[0].statusCode),
+					meta: errorMeta,
+				}
+				await logQueries.createLog(errorResponse)
+			} else {
+				throw new Error('emailService provided should be either smtp or sendgrid')
 			}
-			await logQueries.createLog(errorResponse)
 		} catch (error) {
 			errorResponse = {
 				email: to,

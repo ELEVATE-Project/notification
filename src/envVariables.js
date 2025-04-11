@@ -35,12 +35,21 @@ let enviromentVariables = {
 		optional: true,
 		default: 'notificationgroup',
 	},
-	SENDGRID_API_KEY: {
-		message: 'Required sendgrid api key',
+	EMAIL_SERVICE: {
+		message: 'Required the email service sendgrid/smtp',
 		optional: false,
 	},
-	SENDGRID_FROM_MAIL: {
-		message: 'Required sendgrid sender email address',
+	SENDGRID_API_KEY: {
+		message: 'Required sendgrid api key',
+		optional: true,
+		requiredIf: {
+			key: 'EMAIL_SERVICE',
+			operator: 'EQUALS',
+			value: 'sendgrid',
+		},
+	},
+	FROM_EMAIL: {
+		message: 'Required sender email address',
 		optional: false,
 	},
 	API_DOC_URL: {
@@ -58,6 +67,51 @@ let enviromentVariables = {
 		optional: true,
 		default: true,
 	},
+	SMTP_PASS: {
+		message: 'Required smtp password',
+		optional: true,
+		requiredIf: {
+			key: 'EMAIL_SERVICE',
+			operator: 'EQUALS',
+			value: 'smtp',
+		},
+	},
+	SMTP_HOST: {
+		message: 'Required smtp host',
+		optional: true,
+		requiredIf: {
+			key: 'EMAIL_SERVICE',
+			operator: 'EQUALS',
+			value: 'smtp',
+		},
+	},
+	SMTP_PORT: {
+		message: 'Required smtp port',
+		optional: true,
+		requiredIf: {
+			key: 'EMAIL_SERVICE',
+			operator: 'EQUALS',
+			value: 'smtp',
+		},
+	},
+	SMTP_USER: {
+		message: 'Required smtp username',
+		optional: true,
+		requiredIf: {
+			key: 'EMAIL_SERVICE',
+			operator: 'EQUALS',
+			value: 'smtp',
+		},
+	},
+	SMTP_SECURE: {
+		message: 'Required smtp secure',
+		optional: true,
+		requiredIf: {
+			key: 'EMAIL_SERVICE',
+			operator: 'EQUALS',
+			value: 'smtp',
+		},
+	},
 }
 
 let success = true
@@ -69,6 +123,7 @@ module.exports = function () {
 		}
 
 		let keyCheckPass = true
+		let validRequiredIfOperators = ['EQUALS', 'NOT_EQUALS']
 
 		if (
 			enviromentVariables[eachEnvironmentVariable].optional === true &&

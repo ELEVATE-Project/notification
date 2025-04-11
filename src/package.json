@@ -10,8 +10,8 @@
 		"stage": "node app.js",
 		"prepare": "cd .. && husky install src/.husky",
 		"test:integration": "jest --verbose ./integration-test  --config=integrationJest.config.js --runInBand",
-		"db:init": "sequelize-cli db:create && sequelize-cli db:migrate ",
-		"db:seed:all": "sequelize-cli db:seed:all"
+		"db:init": "sequelize-cli db:create || echo 'Database already exists or some issue while creating db, Please check' && sequelize-cli db:migrate ",
+		"db:seed:all": "sequelize-cli db:seed:all || echo 'Seeded data already exists or some issue while seeding the data, Please check' "
 	},
 	"author": "Aman Kumar Gupta <amangupta15jan@gmail.com>",
 	"license": "ISC",
@@ -31,6 +31,7 @@
 		"jsonwebtoken": "^8.5.1",
 		"kafkajs": "^2.2.2",
 		"module-alias": "^2.2.2",
+		"nodemailer": "^6.10.0",
 		"pg": "^8.11.3",
 		"pg-hstore": "^2.3.4",
 		"require-all": "^3.0.0",

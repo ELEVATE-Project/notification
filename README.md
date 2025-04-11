@@ -35,7 +35,7 @@
 </details> -->
 
 </br>
-The Mentoring building block enables effective mentoring interactions between mentors and mentees. The capability aims to create a transparent eco-system to learn, connect, solve, and share within communities.MentorED is an open source mentoring application that facilitates peer learning and professional development by creating a community of mentors and mentees.
+The Notification building block enables sending emails via SendGrid service. It can receive informations - To, From, Subject, and Body via API as well as Kafka topic and sends the email using Sendgrid service, the credentials of which can be configured in the .env file. This service also maintains a log of all the emails sent in the Postgres.
 </div>
 
 <br>
@@ -302,7 +302,7 @@ KAFKA_GROUP_ID="elevate-notification"
 SENDGRID_API_KEY="SG.asd9f87a9s8d7f."
 
 # Sendgrid sender email address
-SENDGRID_FROM_MAIL="no-reply@some.org"
+FROM_EMAIL="no-reply@some.org"
 
 # Api doc URL
 API_DOC_URL= "/notification/api-doc"
@@ -417,9 +417,7 @@ npm test
 
 This project was built to be used with [Mentoring Service](https://github.com/ELEVATE-Project/mentoring.git) and [User Service](https://github.com/ELEVATE-Project/user.git).
 
-The frontend/mobile application [repo](https://github.com/ELEVATE-Project/mentoring-mobile-app).
-
-You can learn more about the full implementation of MentorEd [here](https://elevate-docs.shikshalokam.org/.mentorEd/intro) .
+You can learn more about the full implementation of various capabilities of ELEVATE [here](https://elevate-docs.shikshalokam.org) .
 
 # Team
 
